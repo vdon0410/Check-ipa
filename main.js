@@ -132,7 +132,7 @@ async function main() {
   } else {
     // Nếu không tìm thấy nút, vẫn tự động chuyển hướng sau 3 giây
     setTimeout(() => {
-      window.location.href = "";
+      window.location.href = "https://t.me/Vdonvision_bot";
     }, 3000);
   }
 }
