@@ -968,18 +968,23 @@
         return false;
       });
 
-      (function () {
-        const threshold = 160;
-        const checkDevTools = function () {
-          if (
-            window.outerWidth - window.innerWidth > threshold ||
-            window.outerHeight - window.innerHeight > threshold
-          ) {
-            window.location.href = "https://t.me/Vdonvision_bot";
-          }
-        };
-        setInterval(checkDevTools, 1000);
-      })();
-    </script>
-  </body>
-</html>
+(function () {
+  let devToolsOpenTime = 0;
+  const threshold = 300;  // Tăng từ 160 → 300
+  
+  const checkDevTools = function () {
+    if (
+      window.outerWidth - window.innerWidth > threshold ||
+      window.outerHeight - window.innerHeight > threshold
+    ) {
+      devToolsOpenTime++;
+      if (devToolsOpenTime > 2) {  // Chỉ redirect nếu persist > 2 lần
+        window.location.href = "https://t.me/Vdonvision_bot";
+      }
+    } else {
+      devToolsOpenTime = 0;  // Reset counter
+    }
+  };
+  setInterval(checkDevTools, 2000);  // Từ 1s → 2s để ít trigger hơn
+})();
+
