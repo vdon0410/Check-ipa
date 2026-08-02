@@ -968,23 +968,25 @@
         return false;
       });
 
-(function () {
-  let devToolsOpenTime = 0;
-  const threshold = 300;  // Tăng từ 160 → 300
-  
-  const checkDevTools = function () {
-    if (
-      window.outerWidth - window.innerWidth > threshold ||
-      window.outerHeight - window.innerHeight > threshold
-    ) {
-      devToolsOpenTime++;
-      if (devToolsOpenTime > 2) {  // Chỉ redirect nếu persist > 2 lần
-        window.location.href = "https://t.me/Vdonvision_bot";
-      }
-    } else {
-      devToolsOpenTime = 0;  // Reset counter
-    }
-  };
-  setInterval(checkDevTools, 2000);  // Từ 1s → 2s để ít trigger hơn
-})();
-
+      // ✅ FIXED: DevTools detection - tăng threshold + persistence check
+      (function () {
+        let devToolsCount = 0;
+        const threshold = 300; // Tăng từ 160 -> 300px để tránh false positive
+        const checkDevTools = function () {
+          if (
+            window.outerWidth - window.innerWidth > threshold ||
+            window.outerHeight - window.innerHeight > threshold
+          ) {
+            devToolsCount++;
+            if (devToolsCount > 3) { // Chỉ redirect nếu persistent > 3 lần (3+ giây)
+              window.location.href = "https://t.me/Vdonvision_bot";
+            }
+          } else {
+            devToolsCount = 0; // Reset nếu DevTools bị đóng
+          }
+        };
+        setInterval(checkDevTools, 2000); // Từ 1s -> 2s: kiểm tra ít thường xuyên hơn
+      })();
+    </script>
+  </body>
+</html>
